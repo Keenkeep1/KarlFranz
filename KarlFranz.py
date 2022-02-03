@@ -22,13 +22,25 @@ import sqlite3
 import json
 
 
+def log_com(ctx):
+
+    ctx.author.name
+
+
 #Define KarlFranz
 KarlFranz = commands.Bot(command_prefix="+", description="I AM KARL FRANZ, PRINCE-ELECTOR AND EMPEROR!")
 
 #Commands
 @KarlFranz.command()
 async def hail(ctx):
+    log_com(ctx)
     await ctx.send("GREETINGS")
+
+@KarlFranz.command()
+async def tester(ctx):
+    print(ctx)
+    print(ctx.message)
+    print(ctx.command)
 
 @KarlFranz.command()
 async def info(ctx):
@@ -72,9 +84,14 @@ async def wiki(ctx, query):
 
 @KarlFranz.command()
 async def ealert(ctx, target):
-        #user = ctx.author
-        user = "Test"
-        email_ping(target, user)
+    user = ctx.author.name
+    r_code = email_ping(target, user)
+    if r_code == 1:
+        await ctx.send(f"{target} has been summoned!", delete_after=1)
+        await ctx.message.delete(delay=1)
+    if r_code == 0:
+        await ctx.send(f"{target} has been obfuscated by Chaos")
+
 
 
 @KarlFranz.command()
@@ -120,37 +137,39 @@ def quote_gen():
 
 
 def email_ping(target, user):
-#    try:
-    Email_Config = open("C:\Python Project Holder\Key Dump\Discord\EmailInfo.txt", "r").read()
-    Email_Infomation_Breakdown = Email_Config.split()
+    try:
+        Email_Config = open("C:\Python Project Holder\Key Dump\Discord\EmailInfo.txt", "r").read()
+        Email_Infomation_Breakdown = Email_Config.split()
 
-    smtp_server = Email_Infomation_Breakdown[0]
-    sender_email = Email_Infomation_Breakdown[1]
-    password = Email_Infomation_Breakdown[2]
+        smtp_server = Email_Infomation_Breakdown[0]
+        sender_email = Email_Infomation_Breakdown[1]
+        password = Email_Infomation_Breakdown[2]
 
-    quote = quote_gen()
+        quote = quote_gen()
 
-    port = 587
-    time = datetime.datetime.utcnow().strftime("%H:%M:%S - %D")
-    subject = "KarlFranz Calling!"
-    body = f'''"{quote}" - {user} at {time}'''
+        port = 587
+        time = datetime.datetime.utcnow().strftime("%H:%M:%S - %D")
+        subject = "KarlFranz Calling!"
+        body = f'''"{quote}" - {user} at {time}'''
 
-    target_email = (User_table.get_or_none(Username=target)).Email
+        target_email = (User_table.get_or_none(Username=target)).Email
 
-    message = MIMEMultipart()
-    message["From"] = sender_email
-    message["To"] = target_email
-    message["Subject"] = subject
-    message.attach(MIMEText(body, "plain"))
+        message = MIMEMultipart()
+        message["From"] = sender_email
+        message["To"] = target_email
+        message["Subject"] = subject
+        message.attach(MIMEText(body, "plain"))
 
-    text = message.as_string()
+        text = message.as_string()
 
-    context = ssl.create_default_context()
-    with smtplib.SMTP(smtp_server, port) as server:
-        server.starttls(context=context)
-        server.login(sender_email, password)
-        server.sendmail(sender_email, target_email, text)
-
+        context = ssl.create_default_context()
+        with smtplib.SMTP(smtp_server, port) as server:
+            server.starttls(context=context)
+            server.login(sender_email, password)
+            server.sendmail(sender_email, target_email, text)
+            return(1)
+    except:
+        return(0)
 
 #Test database connection:
 with open("C:\Python Project Holder\Key Dump\Discord\Database.txt") as json_file:
@@ -171,6 +190,14 @@ class User_table(Model):
     Experience = IntegerField()
     class Meta:
         database = database
+
+class Logs(Model):
+    Command = CharField()
+    User = CharField()
+    Time = TimeField()
+    class Meta:
+        database = database
+
 try:
     table_exist = database.get_tables()
     if 'user_table' in table_exist:
